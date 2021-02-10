@@ -1,1 +1,22 @@
-# Massive Data Analysis Term Project - SimRank
+# 2020 Massive Data Analysis Term Project - SimRank
+- Algorithm:
+  - SimRank 用於處理由用戶與物品所構成的 Bipartite(二部圖), 如果兩個用戶相似, 則與這兩個互相關聯的物品也類似, 如果兩個物品相似, 則與這兩個物品相關的用戶也類似
+  - 規則:
+    - if a=b => S(a,b)=1
+    - else if 指向節點 a 的節點集合 or 指向節點 b 的節點集合是空集合 => S(a,b)=0
+    - else 其他情況 => S(a,b) = [𝐶|𝐼(𝑎)||𝐼(𝑏)|] ΣΣ S(I(a),I(b))
+- Implementation:
+  - 分成兩部分 queries simrank 和 ads simrank
+    - 建立 query_sim、ad_sim: 分別初始化 query 和 ad 的 simrank 矩陣, 對角線上為 1, 其他為 0
+    - Queries SimRank: 把在對角線上(q1=q2)和不在對角線上(q1!=q2)用 filter 分開處理
+      - 在對角線上(q1=q2):把 value 設為 1
+      - 不在對角線上(q1!=q2):分為 Prefix 和 Postfix 兩個部分
+        - Prefix: [𝐶|𝐼(𝑎)||𝐼(𝑏)|]
+          - 把 a 和 b 分別當成 key, 找到 q_sum 中的 value
+          - 相乘取倒數, 再乘上常數 C
+        - Postfix: ΣΣ S (I(a),I(b))
+          - 用上面 prefix 的 key 當成新的 key, map 到 graph 的value, 同時把 value=0 的刪除
+          - 把 key 變成 ads, 並把重複的刪除
+          - 用 cartesian 重新 map 出新的 rdd, 並到 ad_sim 取值, 再把所有 value 加總
+        - 完成之後把 Prefix 和 Postfix 相乘, 再和(q1=q2)的 union 在一起
+    - Ads SimRank:按照 queries simrank 的步驟, 但將 queries 改為ads, ad_sim 改為 q_sim
