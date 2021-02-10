@@ -6,17 +6,26 @@
     - else if 指向節點 a 的節點集合 or 指向節點 b 的節點集合是空集合 => S(a,b)=0
     - else 其他情況 => S(a,b) = [𝐶|𝐼(𝑎)||𝐼(𝑏)|] ΣΣ S(I(a),I(b))
 - Implementation:
-  - 分成兩部分 queries simrank 和 ads simrank
+  - 分成兩部分 Queries simrank 和 Ads simrank
     - 建立 query_sim、ad_sim: 分別初始化 query 和 ad 的 simrank 矩陣, 對角線上為 1, 其他為 0
-    - Queries SimRank: 把在對角線上(q1=q2)和不在對角線上(q1!=q2)用 filter 分開處理
-      - 在對角線上(q1=q2):把 value 設為 1
-      - 不在對角線上(q1!=q2):分為 Prefix 和 Postfix 兩個部分
+    - Queries simrank: 把在對角線上(q1=q2)和不在對角線上(q1!=q2)用 filter 分開處理
+      - 在對角線上(q1=q2): 把 value 設為 1
+      - 不在對角線上(q1!=q2): 分為 Prefix 和 Postfix 兩個部分
         - Prefix: [𝐶|𝐼(𝑎)||𝐼(𝑏)|]
           - 把 a 和 b 分別當成 key, 找到 q_sum 中的 value
           - 相乘取倒數, 再乘上常數 C
         - Postfix: ΣΣ S (I(a),I(b))
-          - 用上面 prefix 的 key 當成新的 key, map 到 graph 的value, 同時把 value=0 的刪除
+          - 用上面 prefix 的 key 當成新的 key, map 到 graph 的 value, 同時把 value=0 的刪除
           - 把 key 變成 ads, 並把重複的刪除
           - 用 cartesian 重新 map 出新的 rdd, 並到 ad_sim 取值, 再把所有 value 加總
-        - 完成之後把 Prefix 和 Postfix 相乘, 再和(q1=q2)的 union 在一起
-    - Ads SimRank:按照 queries simrank 的步驟, 但將 queries 改為ads, ad_sim 改為 q_sim
+        - 完成之後把 Prefix 和 Postfix 相乘, 再和 (q1=q2) 的 union 在一起
+    - Ads simrank: 按照 Queries simrank 的步驟, 但將 queries 改為ads, ad_sim 改為 q_sim
+- Dataset
+  - Demo: 產品與廣告的資料集
+    - 共有 118 行, 每行包含 (產品名,廣告名) 代表該產品在哪個廣告管道曝光
+    - Result: 可觀察到對角線上的相似度皆為 1, a-b 與 b-a 的相似度皆相同，因為相似度不受次序影響, 且所有相似度皆<=1
+  - Real: Stanford University – MOOC User Action Dataset
+    - Sources: https://snap.stanford.edu/data/act-mooc.html
+    - User – Target pair 的 Dataset, User 是學生 ID、Target 是課程 ID, 共有 7,047 個 Users、97 個 Targets、411749 筆 Action
+    - Result: 可觀察到各個 User 之間的相似度、與各個 Target 之間的相似度
+    - 實際可應用於 MOOC 網站的課程推薦系統使用, 推薦學生他們可能感興趣的課程
